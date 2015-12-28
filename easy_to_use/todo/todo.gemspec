@@ -2,7 +2,7 @@
 require File.join([File.dirname(__FILE__),'lib','todo','version.rb'])
 spec = Gem::Specification.new do |s|
   s.name = 'todo'
-  s.version = ToDo::VERSION
+  s.version = Todo::VERSION
   s.author = 'Your Name Here'
   s.email = 'your@email.address.com'
   s.homepage = 'http://your.website.com'
