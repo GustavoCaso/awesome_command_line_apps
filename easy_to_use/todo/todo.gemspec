@@ -1,7 +1,7 @@
 # Ensure we require the local version and not one we might have installed already
-require File.join([File.dirname(__FILE__),'lib','to-do','version.rb'])
-spec = Gem::Specification.new do |s| 
-  s.name = 'to-do'
+require File.join([File.dirname(__FILE__),'lib','todo','version.rb'])
+spec = Gem::Specification.new do |s|
+  s.name = 'todo'
   s.version = ToDo::VERSION
   s.author = 'Your Name Here'
   s.email = 'your@email.address.com'
@@ -12,10 +12,10 @@ spec = Gem::Specification.new do |s|
 ")
   s.require_paths << 'lib'
   s.has_rdoc = true
-  s.extra_rdoc_files = ['README.rdoc','to-do.rdoc']
-  s.rdoc_options << '--title' << 'to-do' << '--main' << 'README.rdoc' << '-ri'
+  s.extra_rdoc_files = ['README.rdoc','todo.rdoc']
+  s.rdoc_options << '--title' << 'todo' << '--main' << 'README.rdoc' << '-ri'
   s.bindir = 'bin'
-  s.executables << 'to-do'
+  s.executables << 'todo'
   s.add_development_dependency('rake')
   s.add_development_dependency('rdoc')
   s.add_development_dependency('aruba')

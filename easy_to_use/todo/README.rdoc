@@ -1,6 +1,6 @@
-= to-do
+= todo
 
 Describe your project here
 
-:include:to-do.rdoc
+:include:todo.rdoc
 
