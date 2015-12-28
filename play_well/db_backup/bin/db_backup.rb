@@ -72,8 +72,8 @@ else
   stdout_str, stderr_str, status = Open3.capture3(command)
 
   unless status.exitstatus == 0
-    puts "There was a problem running '#{command}'"
-    puts stderr_str
+    STDERR.puts "There was a problem running '#{command}'"
+    STDERR.puts stderr_str.gsub(/^mysqldump: /,'')
     exit 1
   end
   #`gzip #{backup_file}.sql`
