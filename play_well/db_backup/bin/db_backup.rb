@@ -56,6 +56,7 @@ if ARGV.empty?
   puts 'error: You must supply a database_name'
   puts
   puts option_parser.help
+  exit 2
 else
   database = ARGV.shift
 
