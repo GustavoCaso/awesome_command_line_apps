@@ -38,10 +38,14 @@ end
 command :list do |c|
   c.flag :s
   c.action do |global_options,options,args|
-    puts 'Global:'
-    puts "-f - #{global_options[:f]}"
-    puts "Command:"
-    puts "-s - #{options[:s]}"
+    todos = read_todos(global_options[:filename])
+    if options[:s] == 'name'
+      todos = todos.sort { |a,b| a <=> b }
+    end
+
+    todos.each do |todo|
+      puts todo
+    end
   end
 end
 
