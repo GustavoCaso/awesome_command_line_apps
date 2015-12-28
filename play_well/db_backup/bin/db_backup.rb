@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'optparse'
-require 'English'
+require 'open3'
 
 options = {}
 option_parser = OptionParser.new do |opts|
@@ -68,9 +68,12 @@ else
   end
   mysqldump = "mysqldump -u#{options[:username]} - p#{options[:password]} #{database}"
   command = "#{mysqldump} > #{backup_file}.sql"
-  system(command)
-  unless $CHILD_STATUS.exitstatus == 0
+
+  stdout_str, stderr_str, status = Open3.capture3(command)
+
+  unless status.exitstatus == 0
     puts "There was a problem running '#{command}'"
+    puts stderr_str
     exit 1
   end
   #`gzip #{backup_file}.sql`
