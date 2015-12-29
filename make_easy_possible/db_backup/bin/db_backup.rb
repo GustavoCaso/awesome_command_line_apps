@@ -17,6 +17,10 @@ Usage: #{executable_name} [options] datbase_name
     options[:gzip] = false
   end
 
+  opts.on("--[no-]force", "Overwrite existing files") do |force|
+    options[:force] = force
+  end
+
   #Creates a switch
   opts.on("-i", "--end-of-iteration", 'Indicate that this backup is an "iteration" backup') do
     options[:iteration] = true
@@ -58,9 +62,10 @@ end
 option_parser.parse!
 
 if ARGV.empty?
-  puts 'error: You must supply a database_name'
+  STDERR.puts 'error: You must supply a database_name'
   puts
   puts option_parser.help
+  exit 2
 else
   database = ARGV.shift
 
@@ -69,8 +74,17 @@ else
   else
     backup_file = database + options[:iteration].to_s
   end
+  output_file = "#{database}.sql"
+  if File.exits? output_file
+    if options[:force]
+      STDERR.puts "Overwriting #{output_file}"
+    else
+      STDERR.puts "error #{output_file} exits, use --force to overwrite"
+      exit 1
+    end
+  end
   mysqldump = "mysqldump -u#{options[:username]} - p#{options[:password]} #{database}"
-  `#{mysqldump} > #{backup_file}.sql`
+  system(`#{mysqldump} > #{backup_file}.sql`)
   `gzip #{backup_file}.sql`
 end
 
