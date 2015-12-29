@@ -19,6 +19,8 @@ end
 
 include GLI::App
 
+config_file File.join(ENV['HOME'], '.todo.rc.yaml')
+
 program_desc 'Application for managing task'
 
 version Todo::VERSION
