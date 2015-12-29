@@ -1,0 +1,150 @@
+#!/usr/bin/env ruby
+require 'gli'
+begin # XXX: Remove this begin/rescue before distributing your app
+require 'todo'
+rescue LoadError
+  STDERR.puts "In development, you need to use `bundle exec bin/todo` to run your app"
+  STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
+  STDERR.puts "Feel free to remove this message from bin/todo now"
+  exit 64
+end
+
+def read_todo(line)
+  line.chomp.split(',')
+end
+
+def write_todo(file,name,created=Time.now, completed='')
+  file.puts("#{name},#{created},#{completed}")
+end
+
+include GLI::App
+
+program_desc 'Application for managing task'
+
+version Todo::VERSION
+
+subcommand_option_handling :normal
+arguments :strict
+default_value "./todo.txt"
+flag :f
+
+desc 'Create a new task in the task list'
+long_desc """
+A task has a name and a priority. By default, new
+tasks have the lowest possible priority, though
+this can be overridden
+"""
+arg_name "task_name"
+command :new do |c|
+  c.desc 'set the priority of the new task, 1 bieng the highest'
+  c.arg_name 'priority'
+  c.flag :p
+
+  c.desc 'put the new task first in the list'
+  c.switch :f
+
+  c.action do |global_options,options,new_tasks|
+    File.open(global_options[:f], 'a+') do |file|
+      if new_tasks.empty?
+        puts 'Reading new tasks from stdin...'
+        new_tasks = STDIN.readlines.map {|t| t.chomp}
+      end
+      tasks = 0
+      new_tasks.each do |task|
+        write_todo(file, task)
+        tasks += 1
+      end
+      if tasks == 0
+        raise "You must provide tasks on command-line or standard input"
+      end
+    end
+  end
+end
+
+desc 'List all the task available'
+
+command [:list, :ls] do |c|
+  c.desc 'Format of the output'
+  c.arg_name 'csv|pretty'
+  c.flag :format
+
+  c.action do |global_options,options,args|
+    if options[:format].nil?
+      if STDOUT.tty?
+        options[:format] = 'pretty'
+      else
+        options[:format] = 'csv'
+      end
+    end
+
+
+    File.open(global_options[:f], 'r') do |file|
+      counter = 1
+      file.readlines.each do |line|
+        name, created, completed = read_todo(line)
+        if options[:format] == 'pretty'
+          printf("%3d - %s\n", counter,name)
+          printf("      Created  :  %s\n", created)
+          unless completed.nil?
+            printf("     Completed : %s\n", completed)
+          end
+        else
+          complete_flag = completed ? "COMPLETE" : "INCOMPLETE"
+          printf("%d,%s,%s,%s,%s\n",counter,name,complete_flag,created,completed)
+        end
+        counter +=1
+      end
+    end
+  end
+end
+
+desc 'Mark a task as completed'
+long_desc """
+Pass the number of the task you want to mark as completed,
+It will append a timestamp with the time of completition
+"""
+command :done do |c|
+  c.action do |global_options,options,args|
+    task_number = args.shift.to_i
+
+    File.open(global_options[:f], 'r') do |file|
+      File.open("#{global_options[:f]}.new", "w") do |new_file|
+        counter = 1
+        file.readlines.each do |line|
+          name, created, completed = read_todo(line)
+          if task_number == counter
+            write_todo(new_file,name, created, Time.now)
+            puts "Task #{counter} completed"
+          else
+            write_todo(new_file,name, created, completed)
+          end
+          counter += 1
+        end
+      end
+    end
+    `mv #{global_options[:f]}.new #{global_options[:f]}`
+  end
+end
+
+pre do |global,command,options,args|
+  # Pre logic here
+  # Return true to proceed; false to abort and not call the
+  # chosen command
+  # Use skips_pre before a command to skip this block
+  # on that command only
+  true
+end
+
+post do |global,command,options,args|
+  # Post logic here
+  # Use skips_post before a command to skip this
+  # block on that command only
+end
+
+on_error do |exception|
+  # Error logic here
+  # return false to skip default error handling
+  true
+end
+
+exit run(ARGV)
