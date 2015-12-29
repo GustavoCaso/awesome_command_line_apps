@@ -76,6 +76,11 @@ else
     STDERR.puts stderr_str.gsub(/^mysqldump: /,'')
     exit 1
   end
+
+  Signal.trap("SIGINT") do
+    FileUtils.rm backup_file
+    exit 1
+  end
   #`gzip #{backup_file}.sql`
 end
 
