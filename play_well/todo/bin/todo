@@ -9,6 +9,14 @@ rescue LoadError
   exit 64
 end
 
+def read_todo(line)
+  line.chomp.split(',')
+end
+
+def write_todo(file,name,created=Time.now, completed='')
+  file.puts("#{name},#{created},#{completed}")
+end
+
 include GLI::App
 
 program_desc 'Application for managing task'
@@ -17,7 +25,7 @@ version Todo::VERSION
 
 subcommand_option_handling :normal
 arguments :strict
-default_value "~/.todo.txt"
+default_value "./todo.txt"
 flag :f
 
 desc 'Create a new task in the task list'
@@ -37,32 +45,44 @@ command :new do |c|
 
   c.action do |global_options,options,args|
 
-    puts 'Global:'
-    puts "-f - #{global_options[:f]}"
-    puts "Command:"
-    puts "-f - #{options[:f] ? 'true' : 'false'}"
-    puts "-p - #{options[:p]}"
-    puts "args - #{args.join(',')}"
+    new_tasks = args
+
+    File.open(global_options[:f], 'a+') do |file|
+      new_tasks.each do |task|
+        write_todo(file, task)
+        puts "Task added."
+      end
+    end
   end
 end
 
 desc 'List all the task available'
-long_desc """
-Pass the -s argument at it will sort by name the different
-task
-"""
-arg_name "sort_name"
-command :list do |c|
-  c.desc 'set the sort algorithm'
-  c.flag :s
-  c.action do |global_options,options,args|
-    todos = read_todos(global_options[:filename])
-    if options[:s] == 'name'
-      todos = todos.sort { |a,b| a <=> b }
-    end
 
-    todos.each do |todo|
-      puts todo
+command :list do |c|
+  c.desc 'Format of the output'
+  c.arg_name 'csv|pretty'
+  c.default_value 'pretty'
+  c.flag :format
+
+  c.action do |global_options,options,args|
+
+
+    File.open(global_options[:f], 'r') do |file|
+      counter = 1
+      file.readlines.each do |line|
+        name, created, completed = read_todo(line)
+        if options[:format] == 'pretty'
+          printf("%3d - %s\n", counter,name)
+          printf("      Created  :  %s\n", created)
+          unless completed.nil?
+            printf("     Completed : %s\n", completed)
+          end
+        else
+          complete_flag = completed ? "COMPLETE" : "INCOMPLETE"
+          printf("%d,%s,%s,%s,%s\n",counter,name,complete_flag,created,completed)
+        end
+        counter +=1
+      end
     end
   end
 end
@@ -74,8 +94,24 @@ It will append a timestamp with the time of completition
 """
 command :done do |c|
   c.action do |global_options,options,args|
-    puts 'Global:'
-    puts "-f - #{global_options[:f]}"
+    task_number = args.shift.to_i
+
+    File.open(global_options[:f], 'r') do |file|
+      File.open("#{global_options[:f]}.new", "w") do |new_file|
+        counter = 1
+        file.readlines.each do |line|
+          name, created, completed = read_todo(line)
+          if task_number == counter
+            write_todo(new_file,name, created, Time.now)
+            puts "Task #{counter} completed"
+          else
+            write_todo(new_file,name, created, completed)
+          end
+          counter += 1
+        end
+      end
+    end
+    `mv #{global_options[:f]}.new #{global_options[:f]}`
   end
 end
 
